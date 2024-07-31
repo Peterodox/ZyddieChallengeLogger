@@ -1,0 +1,14 @@
+## Interface: 110000, 110002
+## Version: 0.1.0
+
+## Title: Zyddie's Challenge Logger
+
+## Notes: Data logger for Zyddie's gold farming challenge.
+
+## Author: Peterodox
+## SavedVariables: ZyddieDB, ZyddieExport
+
+## IconTexture: Interface\AddOns\ZyddieChallengeLogger\Art\Logo-32
+
+Initialization.lua
+Modules\Modules.xml

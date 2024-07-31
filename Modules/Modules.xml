@@ -1,0 +1,8 @@
+<Ui xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
+    <Script file="API.lua"/>
+    <Script file="Template.lua"/>
+
+    <Script file="Money.lua"/>
+    <Script file="Instance.lua"/>
+    <Script file="Export.lua"/>
+</Ui>
