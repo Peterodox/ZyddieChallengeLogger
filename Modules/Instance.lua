@@ -73,6 +73,7 @@ function EL:OnLeaveInstance()
     if data then
         if duration then
             print(format("Left %s: %s (%s) after %s (%s s)", data.instanceID, data.name, data.difficultyName, API.SecondsToTime(duration), duration));
+            ProfileUtil:AddInstanceCounter(instanceID, data.difficultyID, duration);
         else
             print(format("Left %s: %s (%s) after unknown time", data.instanceID, data.name, data.difficultyName));
         end
@@ -105,6 +106,9 @@ function EL:UpdateInstanceStatus()
             difficultyName = difficultyName,
             instanceID = instanceID,
         };
+
+        ProfileUtil:SetInstanceName(instanceID, name);
+        ProfileUtil:SetInstanceDifficultyName(difficultyID, difficultyName);
 
         self:OnEnterInstance();
     else

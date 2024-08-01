@@ -60,7 +60,10 @@ EL:SetScript("OnEvent", function(self, event, ...)
     elseif event == "PLAYER_ENTERING_WORLD" then
         self:UnregisterEvent(event);
         ProfileUtil:InitPlayerProfile();
-        CallbackRegistry:Trigger("PLAYER_ENTERING_WORLD");
+        CallbackRegistry:Trigger("FIRST_PLAYER_ENTERING_WORLD");
+        self:RegisterEvent("PLAYER_LOGOUT");
+    elseif event == "PLAYER_LOGOUT" then
+        CallbackRegistry:Trigger("PLAYER_LOGOUT");
     end
 end);
 
@@ -112,13 +115,18 @@ end
 
 
 
+local strsplit = strsplit;
 local UnitGUID = UnitGUID;
 local UnitFullName = UnitFullName;
-local strsplit = strsplit;
+local UnitRace = UnitRace;
+local UnitClass = UnitClass;
+
+ProfileUtil.FieldValuePrinter = {};
 
 function ProfileUtil:InitPlayerProfile()
     if self.playerDB then return end;
 
+    local unit = "player";
     local _, serverID, playerUID = strsplit("-", UnitGUID("player"));
 
     if not DB.CharacterData then
@@ -131,11 +139,16 @@ function ProfileUtil:InitPlayerProfile()
 
     self.playerDB = DB.CharacterData[playerUID];
 
-    local name, realm = UnitFullName("player");
+    local name, realm = UnitFullName(unit);
+    local localizedRaceName, englishRaceName, raceID = UnitRace(unit);
+    local _, _, classID = UnitClass(unit);
+
     self.playerDB.Name = name;
     self.playerDB.RealmName = realm;
     self.playerDB.ServerID = serverID;
     self.playerDB.PlayerGUID = playerUID;
+    self.playerDB.RaceID = raceID;
+    self.playerDB.ClassID = classID;
 end
 
 function ProfileUtil:GetData(field)
@@ -146,12 +159,87 @@ end
 function ProfileUtil:SetData(field, data)
     self:InitPlayerProfile();
     self.playerDB[field] = data;
-end
 
-function ProfileUtil:ProcessAllCharcaters(func)
-    if not DB.CharacterData then return end;
-
-    for uid, data in pairs(DB.CharacterData) do
-        func(uid, data)
+    --debug
+    if false then
+        if data ~= nil and self.FieldValuePrinter[field] then
+            local description = self.FieldValuePrinter[field][1](data);
+            if description then
+                if self.FieldValuePrinter[field][2] then
+                    print(string.format("Save: %s (%s)", field, description))
+                else
+                    print(string.format("Save: %s %s (%s)", field, data, description))
+                end
+            end
+        end
     end
 end
+
+function ProfileUtil:SetInstanceDifficultyName(difficultyID, difficultyName)
+    if not difficultyName then return end;
+
+    if not DB.InstanceDifficulty then
+        DB.InstanceDifficulty = {};
+    end
+
+    DB.InstanceDifficulty[difficultyID] = difficultyName;
+end
+
+function ProfileUtil:GetInstanceDifficultyName(difficultyID)
+    return (DB.InstanceDifficulty and DB.InstanceDifficulty[difficultyID]) or difficultyID
+end
+
+function ProfileUtil:SetInstanceName(instanceID, name)
+    if not name then return end;
+
+    if not DB.InstanceName then
+        DB.InstanceName = {};
+    end
+    DB.InstanceName[instanceID] = name;
+end
+
+function ProfileUtil:GetInstanceName(instanceID)
+    --TEMP
+    return (DB.InstanceName and DB.InstanceName[instanceID]) or ("Instance "..instanceID)
+end
+
+function ProfileUtil:GetInstanceStats()
+    return DB.InstanceStats
+end
+
+function ProfileUtil:AddInstanceCounter(instanceID, difficultyID, seconds)
+    difficultyID = difficultyID or 0;
+
+    if not DB.InstanceStats then
+        DB.InstanceStats = {};
+    end
+
+    if not DB.InstanceStats[instanceID] then
+        DB.InstanceStats[instanceID] = {};
+    end
+
+    if not DB.InstanceStats[instanceID][difficultyID] then
+        DB.InstanceStats[instanceID][difficultyID] = {0, 0};    --times, totalSeconds
+    end
+
+    local db = DB.InstanceStats[instanceID][difficultyID];
+    db[1] = (db[1] or 0) + 1;
+    db[2] = (db[2] or 0) + seconds;
+end
+
+
+function ProfileUtil:ProcessAllCharcaters(func, tbl)
+    if not DB.CharacterData then return end;
+
+    local index = 0;
+
+    for uid, data in pairs(DB.CharacterData) do
+        index = index + 1;
+        func(uid, data, index, tbl)
+    end
+end
+
+local function AddFieldDescription(field, func, muteRawData)
+    ProfileUtil.FieldValuePrinter[field] = {func, muteRawData or false};
+end
+addon.AddFieldDescription = AddFieldDescription;

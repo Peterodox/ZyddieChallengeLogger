@@ -149,3 +149,44 @@ do  -- Time
     end
     API.SecondsToClock = SecondsToClock;
 end
+
+do  -- Currency
+    local BreakUpLargeNumbers = BreakUpLargeNumbers;
+
+    local GOLD_ICON = "|TInterface\\MoneyFrame\\UI-GoldIcon:14:14:2:0|t";
+    local SILVER_ICON = "|TInterface\\MoneyFrame\\UI-SilverIcon:14:14:2:0|t";
+    local COPPER_ICON = "|TInterface\\MoneyFrame\\UI-CopperIcon:14:14:2:0|t";
+
+    local function FormatMoney(rawCopper)
+        local gold = floor(rawCopper / 10000);
+        local silver = floor((rawCopper - gold * 10000) / 100);
+        local copper = floor(rawCopper - gold * 10000 - silver * 100);
+
+        local text;
+
+        if gold > 0 then
+            text = BreakUpLargeNumbers(gold)..GOLD_ICON;
+        end
+
+        if silver > 0 or copper > 0 then
+            if text then
+                text = text.." "..silver..SILVER_ICON;
+            else
+                text = silver..SILVER_ICON;
+            end
+        end
+
+        if copper > 0 then
+            if text then
+                text = text.." "..copper..COPPER_ICON;
+            end
+        end
+
+        if not text then
+            text = copper..COPPER_ICON;
+        end
+
+        return text
+    end
+    API.FormatMoney = FormatMoney;
+end
